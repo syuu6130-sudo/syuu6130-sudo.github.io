@@ -1,521 +1,618 @@
-# syuu6130-sudo.github.io
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zombie Survival FPS - 無料オンラインゲーム</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+import React, { useState, useEffect, useRef } from 'react';
+import * as THREE from 'three';
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white;
-            overflow-x: hidden;
-        }
+const FortniteFPS = () => {
+  const containerRef = useRef(null);
+  const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
+  const rendererRef = useRef(null);
+  const gameStateRef = useRef('login');
+  
+  const [gameUI, setGameUI] = useState({
+    gameState: 'login',
+    health: 100,
+    ammo: 30,
+    kills: 0,
+    deaths: 0,
+    score: 0,
+    online: 0,
+  });
 
-        .header {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px 0;
-            border-bottom: 3px solid #00ff88;
-            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
-        }
+  const [playerName, setPlayerName] = useState('');
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+  const playerRef = useRef({
+    position: { x: 0, y: 10, z: 0 },
+    velocity: { x: 0, y: 0, z: 0 },
+    angle: 0,
+    pitch: 0,
+    health: 100,
+    ammo: 30,
+    kills: 0,
+    deaths: 0,
+    score: 0,
+    isJumping: false,
+  });
 
-        .logo {
-            font-size: 2.5em;
-            font-weight: bold;
-            background: linear-gradient(45deg, #00ff88, #00d4ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-            margin-bottom: 10px;
-        }
+  const keysRef = useRef({});
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const bulletsRef = useRef([]);
+  const botsRef = useRef([]);
+  const gameLoopRef = useRef(null);
+  const weaponRef = useRef(null);
+  const weaponMuzzleRef = useRef(null);
 
-        .tagline {
-            text-align: center;
-            color: #00ff88;
-            font-size: 1.2em;
-            margin-bottom: 10px;
-        }
+  // スキンデータ
+  const skinData = [
+    { color: 0xff6b6b, name: 'Raider Red' },
+    { color: 0x4ecdc4, name: 'Icy Blue' },
+    { color: 0xf7b731, name: 'Golden' },
+    { color: 0x5f27cd, name: 'Purple Knight' },
+    { color: 0x00d2d3, name: 'Cyan' },
+    { color: 0xff6348, name: 'Sunset' },
+    { color: 0xa29bfe, name: 'Lavender' },
+    { color: 0x74b9ff, name: 'Sky' },
+  ];
 
-        .hero {
-            padding: 60px 20px;
-            text-align: center;
-        }
+  const startGame = () => {
+    if (!playerName.trim()) return;
+    gameStateRef.current = 'playing';
+    setGameUI(prev => ({ ...prev, gameState: 'playing', online: 8 }));
+    setTimeout(() => initScene(), 100);
+  };
 
-        .hero h1 {
-            font-size: 3em;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-            animation: glow 2s ease-in-out infinite alternate;
-        }
+  // プレイヤーメッシュ作成
+  const createPlayerMesh = (skin) => {
+    const group = new THREE.Group();
 
-        @keyframes glow {
-            from { text-shadow: 0 0 20px rgba(0, 255, 136, 0.5); }
-            to { text-shadow: 0 0 30px rgba(0, 255, 136, 0.8), 0 0 40px rgba(0, 212, 255, 0.5); }
-        }
+    // 胴体
+    const bodyGeo = new THREE.BoxGeometry(1.5, 2.5, 1);
+    const bodyMat = new THREE.MeshPhongMaterial({ color: skin.color });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
 
-        .hero p {
-            font-size: 1.3em;
-            margin-bottom: 40px;
-            color: #aaa;
-        }
+    // 頭
+    const headGeo = new THREE.BoxGeometry(1.2, 1.5, 1);
+    const headMat = new THREE.MeshPhongMaterial({ color: 0xf4a460 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 2.2;
+    head.castShadow = true;
+    head.receiveShadow = true;
+    group.add(head);
 
-        .play-button {
-            display: inline-block;
-            padding: 20px 60px;
-            font-size: 1.5em;
-            font-weight: bold;
-            background: linear-gradient(45deg, #ff0000, #ff6600);
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
-            box-shadow: 0 8px 30px rgba(255, 0, 0, 0.4);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: none;
-            animation: pulse 2s infinite;
-        }
+    // 左腕
+    const leftArmGeo = new THREE.BoxGeometry(0.6, 2.2, 0.7);
+    const armMat = new THREE.MeshPhongMaterial({ color: skin.color });
+    const leftArm = new THREE.Mesh(leftArmGeo, armMat);
+    leftArm.position.set(-1.2, 0.5, 0);
+    leftArm.castShadow = true;
+    leftArm.receiveShadow = true;
+    group.add(leftArm);
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
+    // 右腕
+    const rightArm = new THREE.Mesh(leftArmGeo, armMat);
+    rightArm.position.set(1.2, 0.5, 0);
+    rightArm.castShadow = true;
+    rightArm.receiveShadow = true;
+    group.add(rightArm);
 
-        .play-button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 12px 40px rgba(255, 0, 0, 0.6);
-        }
+    // 左足
+    const legGeo = new THREE.BoxGeometry(0.7, 2.2, 0.7);
+    const legMat = new THREE.MeshPhongMaterial({ color: 0x2c3e50 });
+    const leftLeg = new THREE.Mesh(legGeo, legMat);
+    leftLeg.position.set(-0.5, -1.6, 0);
+    leftLeg.castShadow = true;
+    leftLeg.receiveShadow = true;
+    group.add(leftLeg);
 
-        .features {
-            padding: 60px 20px;
-            background: rgba(0, 0, 0, 0.3);
-        }
+    // 右足
+    const rightLeg = new THREE.Mesh(legGeo, legMat);
+    rightLeg.position.set(0.5, -1.6, 0);
+    rightLeg.castShadow = true;
+    rightLeg.receiveShadow = true;
+    group.add(rightLeg);
 
-        .features h2 {
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 50px;
-            color: #00ff88;
-        }
+    return group;
+  };
 
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+  // 武器メッシュ作成
+  const createWeapon = (camera) => {
+    const group = new THREE.Group();
+    group.position.set(0.5, -0.7, -1.5);
 
-        .feature-card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid rgba(0, 255, 136, 0.3);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
+    // メインバレル
+    const barrelGeo = new THREE.CylinderGeometry(0.2, 0.18, 2.5, 16);
+    const barrelMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a });
+    const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+    barrel.rotation.z = Math.PI / 2;
+    barrel.position.x = 0.2;
+    barrel.castShadow = true;
+    group.add(barrel);
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: #00ff88;
-            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
-        }
+    // ストック（銃床）
+    const stockGeo = new THREE.BoxGeometry(0.25, 0.25, 1.8);
+    const stockMat = new THREE.MeshPhongMaterial({ color: 0x654321 });
+    const stock = new THREE.Mesh(stockGeo, stockMat);
+    stock.position.set(-0.3, 0, -1.5);
+    stock.castShadow = true;
+    group.add(stock);
 
-        .feature-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-        }
+    // グリップ
+    const gripGeo = new THREE.BoxGeometry(0.35, 0.5, 0.4);
+    const gripMat = new THREE.MeshPhongMaterial({ color: 0x2c3e50 });
+    const grip = new THREE.Mesh(gripGeo, gripMat);
+    grip.position.set(0, -0.2, -0.3);
+    grip.castShadow = true;
+    group.add(grip);
 
-        .feature-card h3 {
-            font-size: 1.5em;
-            margin-bottom: 15px;
-            color: #00d4ff;
-        }
+    // マガジン
+    const magGeo = new THREE.BoxGeometry(0.4, 1.2, 0.5);
+    const magMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a });
+    const magazine = new THREE.Mesh(magGeo, magMat);
+    magazine.position.set(0, -0.8, -0.2);
+    magazine.castShadow = true;
+    group.add(magazine);
 
-        .feature-card p {
-            color: #ccc;
-            line-height: 1.6;
-        }
+    // サイト
+    const sightGeo = new THREE.BoxGeometry(0.08, 0.4, 0.4);
+    const sightMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
+    const sight = new THREE.Mesh(sightGeo, sightMat);
+    sight.position.set(0.2, 0.3, 0.3);
+    sight.castShadow = true;
+    group.add(sight);
 
-        .screenshots {
-            padding: 60px 20px;
-        }
+    // マズル（銃口）
+    const muzzleGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 16);
+    const muzzle = new THREE.Mesh(muzzleGeo, barrelMat);
+    muzzle.rotation.z = Math.PI / 2;
+    muzzle.position.set(0.2, 0, 1.5);
+    weaponMuzzleRef.current = muzzle;
+    group.add(muzzle);
 
-        .screenshots h2 {
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 50px;
-            color: #00ff88;
-        }
+    camera.add(group);
+    return group;
+  };
 
-        .screenshot-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+  const initScene = () => {
+    if (!containerRef.current) return;
 
-        .screenshot {
-            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid rgba(0, 255, 136, 0.3);
-            text-align: center;
-            transition: all 0.3s ease;
-        }
+    try {
+      if (rendererRef.current && rendererRef.current.domElement.parentNode) {
+        rendererRef.current.domElement.parentNode.removeChild(rendererRef.current.domElement);
+      }
 
-        .screenshot:hover {
-            transform: scale(1.05);
-            border-color: #00ff88;
-        }
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x87ceeb);
+      scene.fog = new THREE.Fog(0x87ceeb, 600, 2000);
+      sceneRef.current = scene;
 
-        .screenshot-placeholder {
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3em;
-            margin-bottom: 15px;
-        }
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
 
-        .controls {
-            padding: 60px 20px;
-            background: rgba(0, 0, 0, 0.3);
-        }
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      directionalLight.position.set(150, 250, 150);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 4096;
+      directionalLight.shadow.mapSize.height = 4096;
+      directionalLight.shadow.camera.left = -400;
+      directionalLight.shadow.camera.right = 400;
+      directionalLight.shadow.camera.top = 400;
+      directionalLight.shadow.camera.bottom = -400;
+      directionalLight.shadow.camera.far = 1500;
+      scene.add(directionalLight);
 
-        .controls h2 {
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 50px;
-            color: #00ff88;
-        }
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        2000
+      );
+      camera.position.set(0, 10, 0);
+      cameraRef.current = camera;
 
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+      containerRef.current.appendChild(renderer.domElement);
+      rendererRef.current = renderer;
 
-        .control-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+      // 地面
+      const groundGeo = new THREE.PlaneGeometry(800, 800);
+      const groundMat = new THREE.MeshLambertMaterial({ color: 0x4a7c4e });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = 0;
+      ground.receiveShadow = true;
+      scene.add(ground);
 
-        .control-key {
-            background: linear-gradient(135deg, #333 0%, #111 100%);
-            padding: 15px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1.2em;
-            border: 2px solid #00d4ff;
-            min-width: 80px;
-            text-align: center;
-        }
+      // 草地テクスチャ効果
+      const grassGeo = new THREE.BufferGeometry();
+      const positions = [];
+      for (let i = 0; i < 1000; i++) {
+        positions.push(
+          (Math.random() - 0.5) * 800,
+          0.05,
+          (Math.random() - 0.5) * 800
+        );
+      }
+      grassGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+      const grassMat = new THREE.PointsMaterial({ color: 0x228b22, size: 2 });
+      const grass = new THREE.Points(grassGeo, grassMat);
+      scene.add(grass);
 
-        .control-desc {
-            color: #ccc;
-        }
+      // 建物1（大塔）
+      const tower1Geo = new THREE.CylinderGeometry(30, 30, 200, 32);
+      const tower1Mat = new THREE.MeshPhongMaterial({ color: 0xa0522d });
+      const tower1 = new THREE.Mesh(tower1Geo, tower1Mat);
+      tower1.position.set(180, 100, 180);
+      tower1.castShadow = true;
+      tower1.receiveShadow = true;
+      scene.add(tower1);
 
-        .footer {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 40px 20px;
-            text-align: center;
-            border-top: 3px solid #00ff88;
-            margin-top: 60px;
-        }
+      // 建物2（大ビル）
+      const build2Geo = new THREE.BoxGeometry(120, 180, 100);
+      const build2Mat = new THREE.MeshPhongMaterial({ color: 0xb0c4de });
+      const build2 = new THREE.Mesh(build2Geo, build2Mat);
+      build2.position.set(-180, 90, -180);
+      build2.castShadow = true;
+      build2.receiveShadow = true;
+      scene.add(build2);
 
-        .footer p {
-            color: #888;
-            margin-bottom: 10px;
-        }
+      // 建物3
+      const build3Geo = new THREE.BoxGeometry(100, 150, 150);
+      const build3Mat = new THREE.MeshPhongMaterial({ color: 0xdaa520 });
+      const build3 = new THREE.Mesh(build3Geo, build3Mat);
+      build3.position.set(180, 75, -180);
+      build3.castShadow = true;
+      build3.receiveShadow = true;
+      scene.add(build3);
 
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 50px;
-            margin-top: 30px;
-            flex-wrap: wrap;
-        }
+      // 建物4
+      const build4Geo = new THREE.BoxGeometry(150, 120, 120);
+      const build4Mat = new THREE.MeshPhongMaterial({ color: 0x8b4513 });
+      const build4 = new THREE.Mesh(build4Geo, build4Mat);
+      build4.position.set(-180, 60, 180);
+      build4.castShadow = true;
+      build4.receiveShadow = true;
+      scene.add(build4);
 
-        .stat-item {
-            text-align: center;
-        }
+      // ランダムな小建物
+      for (let i = 0; i < 20; i++) {
+        const w = 40 + Math.random() * 80;
+        const h = 80 + Math.random() * 120;
+        const d = 40 + Math.random() * 80;
+        const geo = new THREE.BoxGeometry(w, h, d);
+        const colors = [0xff6b6b, 0x4ecdc4, 0xf7b731, 0xa29bfe, 0xc0392b];
+        const mat = new THREE.MeshPhongMaterial({ color: colors[Math.floor(Math.random() * colors.length)] });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(
+          (Math.random() - 0.5) * 500,
+          h / 2,
+          (Math.random() - 0.5) * 500
+        );
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      }
 
-        .stat-number {
-            font-size: 3em;
-            font-weight: bold;
-            background: linear-gradient(45deg, #ff0000, #ff6600);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+      // 武器作成
+      createWeapon(camera);
 
-        .stat-label {
-            color: #888;
-            margin-top: 10px;
-        }
+      // ボット生成
+      createBots(scene, 8);
 
-        #game-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
+      // イベント
+      window.addEventListener('keydown', (e) => {
+        keysRef.current[e.key.toLowerCase()] = true;
+      });
 
-        #game-modal.active {
-            display: flex;
-        }
+      window.addEventListener('keyup', (e) => {
+        keysRef.current[e.key.toLowerCase()] = false;
+      });
 
-        .modal-content {
-            text-align: center;
-            padding: 40px;
-        }
+      window.addEventListener('mousemove', (e) => {
+        const movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
+        const movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
 
-        .modal-content h2 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            color: #00ff88;
-        }
+        playerRef.current.angle -= movementX * 0.005;
+        playerRef.current.pitch -= movementY * 0.005;
+        playerRef.current.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, playerRef.current.pitch));
+      });
 
-        .modal-content p {
-            font-size: 1.2em;
-            margin-bottom: 30px;
-            color: #ccc;
+      window.addEventListener('click', () => {
+        if (playerRef.current.ammo > 0) {
+          shoot();
         }
+      });
 
-        .close-button {
-            padding: 15px 40px;
-            font-size: 1.2em;
-            background: #ff0000;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+      window.addEventListener('resize', () => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+
+      // ゲームループ
+      const gameLoop = () => {
+        update();
+        renderer.render(scene, camera);
+        gameLoopRef.current = requestAnimationFrame(gameLoop);
+      };
+
+      gameLoop();
+    } catch (error) {
+      console.error('Scene init error:', error);
+    }
+  };
+
+  const createBots = (scene, count) => {
+    botsRef.current = [];
+    for (let i = 0; i < count; i++) {
+      const skin = skinData[i % skinData.length];
+      const botMesh = createPlayerMesh(skin);
+      botMesh.position.set(
+        (Math.random() - 0.5) * 400,
+        5,
+        (Math.random() - 0.5) * 400
+      );
+      scene.add(botMesh);
+
+      botsRef.current.push({
+        mesh: botMesh,
+        x: botMesh.position.x,
+        y: botMesh.position.y,
+        z: botMesh.position.z,
+        vx: (Math.random() - 0.5) * 2,
+        vz: (Math.random() - 0.5) * 2,
+        health: 100,
+        skin: skin,
+      });
+    }
+  };
+
+  const shoot = () => {
+    playerRef.current.ammo--;
+    setGameUI(prev => ({ ...prev, ammo: playerRef.current.ammo }));
+
+    const angle = playerRef.current.angle;
+    const pitch = playerRef.current.pitch;
+
+    const vx = Math.sin(angle) * Math.cos(pitch) * 100;
+    const vy = -Math.sin(pitch) * 100;
+    const vz = Math.cos(angle) * Math.cos(pitch) * 100;
+
+    // マズルフラッシュ効果
+    if (weaponMuzzleRef.current) {
+      weaponMuzzleRef.current.material.emissive.setHex(0xffaa00);
+      setTimeout(() => {
+        if (weaponMuzzleRef.current) {
+          weaponMuzzleRef.current.material.emissive.setHex(0x000000);
         }
+      }, 50);
+    }
 
-        .close-button:hover {
-            background: #ff3333;
-            transform: scale(1.05);
+    bulletsRef.current.push({
+      x: playerRef.current.position.x,
+      y: playerRef.current.position.y + 1.5,
+      z: playerRef.current.position.z,
+      vx,
+      vy,
+      vz,
+      life: 300,
+    });
+  };
+
+  const update = () => {
+    const speed = 0.3;
+    
+    // W: 前進（修正）
+    if (keysRef.current['w']) {
+      playerRef.current.velocity.x += Math.sin(playerRef.current.angle) * speed;
+      playerRef.current.velocity.z += Math.cos(playerRef.current.angle) * speed;
+    }
+    // S: 後退（修正）
+    if (keysRef.current['s']) {
+      playerRef.current.velocity.x -= Math.sin(playerRef.current.angle) * speed;
+      playerRef.current.velocity.z -= Math.cos(playerRef.current.angle) * speed;
+    }
+    // A: 左移動
+    if (keysRef.current['a']) {
+      playerRef.current.velocity.x += Math.sin(playerRef.current.angle - Math.PI / 2) * speed;
+      playerRef.current.velocity.z += Math.cos(playerRef.current.angle - Math.PI / 2) * speed;
+    }
+    // D: 右移動
+    if (keysRef.current['d']) {
+      playerRef.current.velocity.x += Math.sin(playerRef.current.angle + Math.PI / 2) * speed;
+      playerRef.current.velocity.z += Math.cos(playerRef.current.angle + Math.PI / 2) * speed;
+    }
+
+    if (keysRef.current[' '] && !playerRef.current.isJumping) {
+      playerRef.current.velocity.y = 0.6;
+      playerRef.current.isJumping = true;
+    }
+
+    if (keysRef.current['r']) {
+      playerRef.current.ammo = 30;
+      setGameUI(prev => ({ ...prev, ammo: 30 }));
+    }
+
+    // 重力と抵抗
+    playerRef.current.velocity.y -= 0.02;
+    playerRef.current.velocity.x *= 0.9;
+    playerRef.current.velocity.z *= 0.9;
+
+    playerRef.current.position.x += playerRef.current.velocity.x;
+    playerRef.current.position.y += playerRef.current.velocity.y;
+    playerRef.current.position.z += playerRef.current.velocity.z;
+
+    // 境界処理（壁すり抜け防止）
+    if (playerRef.current.position.x < -350) playerRef.current.position.x = -350;
+    if (playerRef.current.position.x > 350) playerRef.current.position.x = 350;
+    if (playerRef.current.position.z < -350) playerRef.current.position.z = -350;
+    if (playerRef.current.position.z > 350) playerRef.current.position.z = 350;
+
+    // 地面衝突
+    if (playerRef.current.position.y < 2) {
+      playerRef.current.position.y = 2;
+      playerRef.current.velocity.y = 0;
+      playerRef.current.isJumping = false;
+    }
+
+    // カメラ更新
+    if (cameraRef.current) {
+      cameraRef.current.position.set(
+        playerRef.current.position.x,
+        playerRef.current.position.y + 1.7,
+        playerRef.current.position.z
+      );
+      cameraRef.current.rotation.order = 'YXZ';
+      cameraRef.current.rotation.y = playerRef.current.angle;
+      cameraRef.current.rotation.x = playerRef.current.pitch;
+    }
+
+    // ボット更新
+    botsRef.current.forEach(bot => {
+      bot.x += bot.vx;
+      bot.z += bot.vz;
+
+      if (Math.abs(bot.x) > 350 || Math.abs(bot.z) > 350) {
+        bot.vx *= -1;
+        bot.vz *= -1;
+      }
+
+      bot.mesh.position.set(bot.x, bot.y, bot.z);
+    });
+
+    // 弾更新
+    bulletsRef.current = bulletsRef.current.filter(bullet => {
+      bullet.x += bullet.vx * 0.016;
+      bullet.y += bullet.vy * 0.016;
+      bullet.z += bullet.vz * 0.016;
+      bullet.life--;
+
+      botsRef.current.forEach(bot => {
+        const dx = bullet.x - bot.x;
+        const dy = bullet.y - bot.y;
+        const dz = bullet.z - bot.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (dist < 3) {
+          bot.health -= 25;
+          bullet.life = 0;
+
+          if (bot.health <= 0) {
+            playerRef.current.kills++;
+            playerRef.current.score += 100;
+            setGameUI(prev => ({
+              ...prev,
+              kills: playerRef.current.kills,
+              score: playerRef.current.score,
+            }));
+
+            bot.health = 100;
+            bot.x = (Math.random() - 0.5) * 300;
+            bot.z = (Math.random() - 0.5) * 300;
+          }
         }
+      });
 
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2em;
-            }
-            
-            .logo {
-                font-size: 1.8em;
-            }
+      return bullet.life > 0;
+    });
+  };
 
-            .play-button {
-                padding: 15px 40px;
-                font-size: 1.2em;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header class="header">
-        <div class="container">
-            <div class="logo">🧟 ZOMBIE SURVIVAL FPS</div>
-            <div class="tagline">究極のゾンビサバイバル体験</div>
+  useEffect(() => {
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
+      {gameUI.gameState === 'login' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            flexDirection: 'column',
+          }}
+        >
+          <h1 style={{ fontSize: '4em', color: '#fff', marginBottom: '20px', fontWeight: 'bold' }}>
+            🎮 FORTNITE FPS
+          </h1>
+          <p style={{ fontSize: '1.5em', color: '#fff', marginBottom: '40px' }}>3D FPS Battle Royale</p>
+
+          <input
+            type="text"
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            placeholder="プレイヤー名"
+            onKeyPress={(e) => e.key === 'Enter' && startGame()}
+            style={{
+              padding: '15px',
+              fontSize: '1.1em',
+              width: '300px',
+              marginBottom: '20px',
+              border: 'none',
+              borderRadius: '5px',
+            }}
+          />
+
+          <button
+            onClick={startGame}
+            style={{
+              padding: '15px 50px',
+              fontSize: '1.3em',
+              background: '#ff6b6b',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+          >
+            START
+          </button>
         </div>
-    </header>
+      )}
 
-    <section class="hero">
-        <div class="container">
-            <h1>🎮 今すぐプレイ！</h1>
-            <p>ブラウザで遊べる本格FPSゲーム。ゾンビの大群から生き残れ！</p>
-            <button class="play-button" onclick="startGame()">▶ ゲームを開始</button>
-            
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number">100%</div>
-                    <div class="stat-label">無料</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">3D</div>
-                    <div class="stat-label">グラフィック</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">∞</div>
-                    <div class="stat-label">ウェーブ</div>
-                </div>
-            </div>
-        </div>
-    </section>
+      {gameUI.gameState === 'playing' && (
+        <>
+          <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
-    <section class="features">
-        <div class="container">
-            <h2>✨ ゲームの特徴</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>リアルな3D体験</h3>
-                    <p>Three.jsを使用した美しい3Dグラフィックで、没入感のあるゲームプレイを実現</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🧟</div>
-                    <h3>エンドレスモード</h3>
-                    <p>どこまで生き残れるか挑戦！ウェーブごとに難易度が上昇し、強力なゾンビが出現</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⚙️</div>
-                    <h3>カスタマイズ可能</h3>
-                    <p>感度、明るさ、クロスヘア、FOVなど細かい設定が可能。自分好みの環境でプレイ</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔫</div>
-                    <h3>多彩な機能</h3>
-                    <p>オートエイム、オート射撃など、初心者から上級者まで楽しめる機能を搭載</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🌍</div>
-                    <h3>広大なマップ</h3>
-                    <p>建物、遮蔽物、コンテナなど戦略的に配置されたマップで戦術的なプレイが可能</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💻</div>
-                    <h3>ブラウザで即プレイ</h3>
-                    <p>ダウンロード不要！対応ブラウザで今すぐプレイ可能。インストール一切不要</p>
-                </div>
-            </div>
-        </div>
-    </section>
+          <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '20px', borderRadius: '10px', fontFamily: 'monospace', fontSize: '1.2em' }}>
+            <div>❤️ Health: {gameUI.health}</div>
+            <div>🔫 Ammo: {gameUI.ammo}</div>
+            <div>👥 Online: {gameUI.online}</div>
+          </div>
 
-    <section class="screenshots">
-        <div class="container">
-            <h2>📸 ゲーム画面</h2>
-            <div class="screenshot-grid">
-                <div class="screenshot">
-                    <div class="screenshot-placeholder">🎮</div>
-                    <p>迫力の戦闘シーン</p>
-                </div>
-                <div class="screenshot">
-                    <div class="screenshot-placeholder">🏙️</div>
-                    <p>広大な3Dマップ</p>
-                </div>
-                <div class="screenshot">
-                    <div class="screenshot-placeholder">🧟</div>
-                    <p>恐怖のゾンビ軍団</p>
-                </div>
-            </div>
-        </div>
-    </section>
+          <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '20px', borderRadius: '10px', fontFamily: 'monospace', fontSize: '1.2em' }}>
+            <div>⚔️ Kills: {gameUI.kills}</div>
+            <div>💀 Deaths: {gameUI.deaths}</div>
+            <div>⭐ Score: {gameUI.score}</div>
+          </div>
 
-    <section class="controls">
-        <div class="container">
-            <h2>🎮 操作方法</h2>
-            <div class="controls-grid">
-                <div class="control-item">
-                    <div class="control-key">W A S D</div>
-                    <div class="control-desc">キャラクター移動</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">マウス</div>
-                    <div class="control-desc">視点変更・照準</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">クリック</div>
-                    <div class="control-desc">射撃（長押しで連射）</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">SPACE</div>
-                    <div class="control-desc">ジャンプ</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">R</div>
-                    <div class="control-desc">リロード</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">ESC</div>
-                    <div class="control-desc">設定メニュー</div>
-                </div>
-            </div>
-        </div>
-    </section>
+          <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '15px 30px', borderRadius: '10px', textAlign: 'center', fontSize: '1em' }}>
+            WASD: 移動 | SPACE: ジャンプ | クリック: 射撃 | R: リロード | マウス: 視点変更
+          </div>
 
-    <section class="hero" style="padding-top: 40px;">
-        <div class="container">
-            <h1>準備はいいか？</h1>
-            <p>ゾンビの大群があなたを待っている...</p>
-            <button class="play-button" onclick="startGame()">▶ 今すぐプレイ</button>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <div class="container">
-            <p>🧟 Zombie Survival FPS - ブラウザで遊べる無料3Dゲーム</p>
-            <p style="font-size: 0.9em; margin-top: 20px;">© 2025 Zombie Survival FPS. All rights reserved.</p>
-            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">
-                ⚠️ このゲームには暴力的な表現が含まれます。18歳未満の方は保護者の同意を得てプレイしてください。
-            </p>
-        </div>
-    </footer>
-
-    <div id="game-modal">
-        <div class="modal-content">
-            <h2>🚀 ゲームを起動中...</h2>
-            <p>ゲームは別のアーティファクトとして表示されます</p>
-            <p style="color: #00ff88; margin-top: 20px;">Claude.aiの右側にゲーム画面が表示されます！</p>
-            <button class="close-button" onclick="closeModal()">✓ 理解しました</button>
-        </div>
+          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '25px', height: '25px', border: '2px solid lime', borderRadius: '50%', pointerEvents: 'none', boxShadow: '0 0 10px lime' }} />
+        </>
+      )}
     </div>
+  );
+};
 
-    <script>
-        function startGame() {
-            const modal = document.getElementById('game-modal');
-            modal.classList.add('active');
-            
-            setTimeout(() => {
-                modal.classList.remove('active');
-            }, 4000);
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('game-modal');
-            modal.classList.remove('active');
-        }
-
-        // スムーススクロール
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+export default FortniteFPS;
