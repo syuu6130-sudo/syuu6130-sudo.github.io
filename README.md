@@ -116,7 +116,7 @@ body {
   <div class="image"><img src="https://via.placeholder.com/500x300/667eea/764ba2?text=投稿画像" alt="post-image"></div>
   
   <div style="margin:20px 0;color:#333">
-    <p>素敵な時間を過ごしています</p>
+    <p>柊羽がついにサイト立ち上げてみた</p>
     <a href="https://www.tiktok.com/@syu_u0316" style="color:#667eea;text-decoration:none">TikTokプロフィール</a>
   </div>
   
