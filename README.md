@@ -113,7 +113,7 @@ body {
     </div>
   </div>
   
-  <div class="image"><img src="https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/550ffa3db40678d1b57c8e6a19a7eaa1~tplv-tiktokx-cropcenter:100:100.jpeg?dr=14579&refresh_token=2fe07fed&x-expires=1760580000&x-signature=mYVWUCGPGY2n6%2FPvxfG2dsjs8Ug%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my" alt="post-image"></div>
+  <div class="image"><img src="https://d.kuku.lu/yh3ns668v" alt="post-image"></div>
   
   <div style="margin:20px 0;color:#333">
     <p>素敵な時間を過ごしています</p>
