@@ -29,25 +29,34 @@ body {
 .avatar {
   width: 48px;
   height: 48px;
-  background: #667eea;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .image {
   width: 100%;
   height: 300px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 80px;
   margin: 20px 0;
+  overflow: hidden;
+}
+
+.image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .btn {
@@ -97,14 +106,14 @@ body {
 
 <div class="container">
   <div class="header">
-    <div class="avatar">S</div>
+    <div class="avatar"><img src="https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/550ffa3db40678d1b57c8e6a19a7eaa1~tplv-tiktokx-cropcenter:100:100.jpeg?dr=14579&refresh_token=2fe07fed&x-expires=1760580000&x-signature=mYVWUCGPGY2n6%2FPvxfG2dsjs8Ug%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my" alt="avatar"></div>
     <div>
       <h2 style="margin:0">柊羽</h2>
       <p style="margin:4px 0 0 0;color:#666;font-size:13px">@syu_u0316</p>
     </div>
   </div>
   
-  <div class="image">🎡</div>
+  <div class="image"><img src="https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/550ffa3db40678d1b57c8e6a19a7eaa1~tplv-tiktokx-cropcenter:100:100.jpeg?dr=14579&refresh_token=2fe07fed&x-expires=1760580000&x-signature=mYVWUCGPGY2n6%2FPvxfG2dsjs8Ug%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my" alt="post-image"></div>
   
   <div style="margin:20px 0;color:#333">
     <p>素敵な時間を過ごしています</p>
