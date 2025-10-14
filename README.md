@@ -1,56 +1,147 @@
-import { useState } from 'react';
-import { Heart } from 'lucide-react';
-
-export default function LikeButton() {
-  const [likes, setLikes] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-
-  const handleLike = () => {
-    if (isLiked) {
-      setLikes(likes - 1);
-      setIsLiked(false);
-    } else {
-      setLikes(likes + 1);
-      setIsLiked(true);
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">TikTok投稿</h1>
-          <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center mb-6">
-            <p className="text-gray-500">画像がここに表示されます</p>
-          </div>
-          
-          <div className="mb-8">
-            <p className="text-gray-700 mb-4">投稿内容がここに表示されます</p>
-            <p className="text-sm text-gray-500 mb-4">@syu_u0316</p>
-          </div>
-
-          <div className="flex items-center justify-center gap-4">
-            <button
-              onClick={handleLike}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-200 transform ${
-                isLiked
-                  ? 'bg-red-500 text-white scale-110'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              <Heart
-                size={24}
-                fill={isLiked ? 'currentColor' : 'none'}
-              />
-              いいね
-            </button>
-          </div>
-
-          <div className="mt-6 text-2xl font-bold text-gray-800">
-            <p className="text-red-500">{likes.toLocaleString()}件のいいね</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
+.container {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  background: #667eea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.image {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  margin: 20px 0;
+}
+
+.btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  font-size: 16px;
+  color: #666;
+  margin: 10px 5px;
+  border-radius: 8px;
+}
+
+.btn:hover {
+  background: #f0f0f0;
+}
+
+.btn.liked {
+  color: #e74c3c;
+  animation: beat 0.3s ease;
+}
+
+.actions {
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  padding: 20px 0;
+  margin: 30px 0;
+  text-align: center;
+}
+
+.count {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 32px;
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+@keyframes beat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="avatar">S</div>
+    <div>
+      <h2 style="margin:0">柊羽</h2>
+      <p style="margin:4px 0 0 0;color:#666;font-size:13px">@syu_u0316</p>
+    </div>
+  </div>
+  
+  <div class="image">🎡</div>
+  
+  <div style="margin:20px 0;color:#333">
+    <p>素敵な時間を過ごしています</p>
+    <a href="https://www.tiktok.com/@syu_u0316" style="color:#667eea;text-decoration:none">TikTokプロフィール</a>
+  </div>
+  
+  <div class="actions">
+    <button class="btn" id="likeBtn">Like</button>
+    <button class="btn">Comment</button>
+    <button class="btn">Share</button>
+  </div>
+  
+  <div class="count">
+    <div id="count">0</div>
+    <div style="font-size:16px;color:#222">Likes</div>
+  </div>
+</div>
+
+<script>
+let likeCount = 0;
+let isLiked = false;
+const btn = document.getElementById('likeBtn');
+const countEl = document.getElementById('count');
+
+btn.addEventListener('click', function() {
+  if (isLiked) {
+    likeCount = likeCount - 1;
+    isLiked = false;
+    btn.classList.remove('liked');
+  } else {
+    likeCount = likeCount + 1;
+    isLiked = true;
+    btn.classList.add('liked');
+  }
+  countEl.textContent = likeCount;
+});
+</script>
+
+</body>
+</html>
