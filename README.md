@@ -113,7 +113,7 @@ body {
     </div>
   </div>
   
-  <div class="image"><img src="https://d.kuku.lu/yh3ns668v" alt="post-image"></div>
+  <div class="image"><img src="https://via.placeholder.com/500x300/667eea/764ba2?text=投稿画像" alt="post-image"></div>
   
   <div style="margin:20px 0;color:#333">
     <p>素敵な時間を過ごしています</p>
