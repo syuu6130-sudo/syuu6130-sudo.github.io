@@ -1,5 +1,6 @@
 <html>
 <head>
+<title>柊羽 TikTok公式サイト</title>
 <style>
 body {
   margin: 0;
@@ -109,14 +110,14 @@ body {
     <div class="avatar"><img src="https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/550ffa3db40678d1b57c8e6a19a7eaa1~tplv-tiktokx-cropcenter:100:100.jpeg?dr=14579&refresh_token=2fe07fed&x-expires=1760580000&x-signature=mYVWUCGPGY2n6%2FPvxfG2dsjs8Ug%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my" alt="avatar"></div>
     <div>
       <h2 style="margin:0">柊羽</h2>
-      <p style="margin:4px 0 0 0;color:#666;font-size:13px">@syu_u0316</p>
+      <p style="margin:4px 0 0 0;color:#666;font-size:13px">TikTok公式サイト</p>
     </div>
   </div>
   
   <div class="image"><img src="https://via.placeholder.com/500x300/667eea/764ba2?text=投稿画像" alt="post-image"></div>
   
   <div style="margin:20px 0;color:#333">
-    <p>柊羽がついにサイト立ち上げてみた</p>
+    <p>素敵な時間を過ごしています</p>
     <a href="https://www.tiktok.com/@syu_u0316" style="color:#667eea;text-decoration:none">TikTokプロフィール</a>
   </div>
   
