@@ -1,157 +1,108 @@
-<html>
+<!doctype html>
+<html lang="ja">
 <head>
-<title>柊羽 TikTok公式サイト</title>
-<style>
-body {
-  margin: 0;
-  padding: 20px;
-  font-family: Arial;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.container {
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
-  max-width: 500px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-}
-
-.header {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image {
-  width: 100%;
-  height: 300px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 20px 0;
-  overflow: hidden;
-}
-
-.image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.btn {
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 10px 20px;
-  font-size: 16px;
-  color: #666;
-  margin: 10px 5px;
-  border-radius: 8px;
-}
-
-.btn:hover {
-  background: #f0f0f0;
-}
-
-.btn.liked {
-  color: #e74c3c;
-  animation: beat 0.3s ease;
-}
-
-.actions {
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
-  padding: 20px 0;
-  margin: 30px 0;
-  text-align: center;
-}
-
-.count {
-  text-align: center;
-  margin-top: 30px;
-  font-size: 32px;
-  color: #e74c3c;
-  font-weight: bold;
-}
-
-@keyframes beat {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>3D After Effects - Visible Fix</title>
+  <style>
+    html,body{height:100%;margin:0;overflow:hidden;background:#000;}
+    canvas{display:block;}
+  </style>
 </head>
 <body>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.152.2/build/three.module.js';
+    import { FontLoader } from 'https://unpkg.com/three@0.152.2/examples/jsm/loaders/FontLoader.js';
+    import { TextGeometry } from 'https://unpkg.com/three@0.152.2/examples/jsm/geometries/TextGeometry.js';
 
-<div class="container">
-  <div class="header">
-    <div class="avatar"><img src="https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/550ffa3db40678d1b57c8e6a19a7eaa1~tplv-tiktokx-cropcenter:100:100.jpeg?dr=14579&refresh_token=2fe07fed&x-expires=1760580000&x-signature=mYVWUCGPGY2n6%2FPvxfG2dsjs8Ug%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my" alt="avatar"></div>
-    <div>
-      <h2 style="margin:0">柊羽</h2>
-      <p style="margin:4px 0 0 0;color:#666;font-size:13px">TikTok公式サイト</p>
-    </div>
-  </div>
-  
-  <div class="image"><img src="https://via.placeholder.com/500x300/667eea/764ba2?text=投稿画像" alt="post-image"></div>
-  
-  <div style="margin:20px 0;color:#333">
-    <p>ついに柊羽がサイト立ち上げてみた</p>
-    <a href="https://www.tiktok.com/@syu_u0316" style="color:#667eea;text-decoration:none">TikTokプロフィール</a>
-  </div>
-  
-  <div class="actions">
-    <button class="btn" id="likeBtn">Like</button>
-    <button class="btn">Comment</button>
-    <button class="btn">Share</button>
-  </div>
-  
-  <div class="count">
-    <div id="count">0</div>
-    <div style="font-size:16px;color:#222">Likes</div>
-  </div>
-</div>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000010);
 
-<script>
-let likeCount = 0;
-let isLiked = false;
-const btn = document.getElementById('likeBtn');
-const countEl = document.getElementById('count');
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 10, 90);
 
-btn.addEventListener('click', function() {
-  if (isLiked) {
-    likeCount = likeCount - 1;
-    isLiked = false;
-    btn.classList.remove('liked');
-  } else {
-    likeCount = likeCount + 1;
-    isLiked = true;
-    btn.classList.add('liked');
-  }
-  countEl.textContent = likeCount;
-});
-</script>
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
+    const light = new THREE.PointLight(0x00ffff, 2, 400);
+    light.position.set(30, 50, 100);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x99ffff, 0.6));
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    // トーラス（光る輪）
+    const torusMat = new THREE.MeshStandardMaterial({
+      color:0x004455,
+      emissive:0x00ffff,
+      emissiveIntensity:2,
+      metalness:0.8,
+      roughness:0.1
+    });
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(40, 2.5, 32, 128), torusMat);
+    torus.rotation.x = Math.PI/2;
+    group.add(torus);
+
+    // パーティクル
+    const particles = new THREE.Group();
+    const geo = new THREE.SphereGeometry(0.3, 6, 6);
+    for(let i=0;i<300;i++){
+      const p = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Math.random(),1,0.6)}));
+      p.position.set((Math.random()-0.5)*200, (Math.random()-0.5)*100, (Math.random()-0.5)*200);
+      particles.add(p);
+    }
+    group.add(particles);
+
+    // フォント読み込み後に文字を追加
+    const loader = new FontLoader();
+    loader.load('https://unpkg.com/three@0.152.2/examples/fonts/helvetiker_regular.typeface.json', font => {
+      const geo = new TextGeometry('UNREAL FX', {
+        font: font,
+        size: 12,
+        height: 3,
+        bevelEnabled: true,
+        bevelThickness: 0.6,
+        bevelSize: 0.4
+      });
+      geo.center();
+      const mat = new THREE.MeshStandardMaterial({
+        color:0x00ffff,
+        emissive:0x00ffff,
+        emissiveIntensity:1.5,
+        metalness:0.9,
+        roughness:0.1
+      });
+      const text = new THREE.Mesh(geo, mat);
+      group.add(text);
+    });
+
+    // アニメーション
+    let start = performance.now();
+    function animate(){
+      const t = (performance.now() - start) / 1000;
+      const u = (t % 20) / 20; // 20秒ループ
+
+      const radius = 70;
+      camera.position.x = Math.cos(u*Math.PI*2)*radius;
+      camera.position.z = Math.sin(u*Math.PI*2)*radius;
+      camera.lookAt(0,0,0);
+
+      torus.rotation.z += 0.02;
+      particles.rotation.y += 0.002;
+      group.rotation.y += 0.001;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    window.addEventListener('resize',()=>{
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
 </body>
 </html>
